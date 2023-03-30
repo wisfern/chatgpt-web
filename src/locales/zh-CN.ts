@@ -59,6 +59,7 @@ export default {
     name: '名称',
     description: '描述',
     role: '角色设定',
+    model: '模型选择',
     resetUserInfo: '重置用户信息',
     chatHistory: '聊天记录',
     theme: '主题',

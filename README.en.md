@@ -233,7 +233,7 @@ The `OPENAI_API_MODEL` is optional and only used when setting the `OPENAI_API_KE
 
 ### Deployment with Railway
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/yytmgc)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/sfY2e4?referralCode=Ejn0EF)
 
 #### Railway Environment Variables
 

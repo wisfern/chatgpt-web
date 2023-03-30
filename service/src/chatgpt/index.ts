@@ -80,7 +80,11 @@ let api: ChatGPTAPI | ChatGPTUnofficialProxyAPI
     if (isNotEmptyString(process.env.API_REVERSE_PROXY))
       options.apiReverseProxyUrl = process.env.API_REVERSE_PROXY
 
-    setupProxy(options)
+    // setupProxy(options)
+    const agents = createProxyAgent()
+    options.fetch = (url, options) => {
+      return fetch(url, { ...agents, ...options })
+    }
 
     api = new ChatGPTUnofficialProxyAPI({ ...options })
     apiModel = 'ChatGPTUnofficialProxyAPI'
@@ -88,7 +92,7 @@ let api: ChatGPTAPI | ChatGPTUnofficialProxyAPI
 })()
 
 async function chatReplyProcess(options: RequestOptions) {
-  const { message, lastContext, process, systemMessage } = options
+  const { message, lastContext, process, systemMessage, model } = options
   try {
     let options: SendMessageOptions = { timeoutMs }
 
@@ -103,6 +107,9 @@ async function chatReplyProcess(options: RequestOptions) {
       else
         options = { ...lastContext }
     }
+
+    if (isNotEmptyString(model))
+      options.completionParams = { model }
 
     const response = await api.sendMessage(message, {
       ...options,
@@ -122,6 +129,45 @@ async function chatReplyProcess(options: RequestOptions) {
   }
 }
 
+/**
+ * 从环境变量中读取代理配置信息，创建代理对象
+ * @returns 返回dict对象，httpAgent和httpsAgent，如果无代码配置，则是undefined
+ */
+function createProxyAgent() {
+  if (process.env.SOCKS_PROXY_HOST && process.env.SOCKS_PROXY_PORT) {
+    // console.log('代理配置: %s:%s', process.env.SOCKS_PROXY_HOST, process.env.SOCKS_PROXY_PORT)
+    const agent = new SocksProxyAgent({
+      hostname: process.env.SOCKS_PROXY_HOST,
+      port: process.env.SOCKS_PROXY_PORT,
+      username: process.env.SOCKS_PROXY_USERNAME,
+      password: process.env.SOCKS_PROXY_PASSWORD,
+    })
+    const https_agent = new SocksProxyAgent({
+      protocol: 'socks5h',
+      hostname: process.env.SOCKS_PROXY_HOST,
+      port: process.env.SOCKS_PROXY_PORT,
+      username: process.env.SOCKS_PROXY_USERNAME,
+      password: process.env.SOCKS_PROXY_PASSWORD,
+    })
+    return {
+      httpAgent: agent,
+      httpsAgent: https_agent,
+    }
+  }
+  if (process.env.HTTPS_PROXY || process.env.ALL_PROXY) {
+    const httpsProxy = process.env.HTTPS_PROXY || process.env.ALL_PROXY
+    const agent = new HttpsProxyAgent(httpsProxy)
+    return {
+      httpAgent: agent,
+      httpsAgent: agent,
+    }
+  }
+  return {
+    httpAgent: undefined,
+    httpsAgent: undefined,
+  }
+}
+
 async function fetchBalance() {
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY
   const OPENAI_API_BASE_URL = process.env.OPENAI_API_BASE_URL
@@ -134,8 +180,9 @@ async function fetchBalance() {
     : 'https://api.openai.com'
 
   try {
+    const proxy = createProxyAgent()
     const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` }
-    const response = await axios.get(`${API_BASE_URL}/dashboard/billing/credit_grants`, { headers })
+    const response = await axios.get(`${API_BASE_URL}/dashboard/billing/credit_grants`, { headers, ...proxy })
     const balance = response.data.total_available ?? 0
     return Promise.resolve(balance.toFixed(3))
   }
@@ -186,4 +233,4 @@ function currentModel(): ApiModel {
 
 export type { ChatContext, ChatMessage }
 
-export { chatReplyProcess, chatConfig, currentModel }
+export { chatReplyProcess, chatConfig, currentModel, createProxyAgent }

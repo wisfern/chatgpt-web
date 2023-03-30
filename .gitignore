@@ -29,4 +29,6 @@ coverage
 *.sw?
 
 # Environment variables files
-/service/.env
+.env
+package-lock.json*
+pnpm-lock.yaml*
