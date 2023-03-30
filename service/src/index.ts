@@ -1,4 +1,5 @@
 import express from 'express'
+import type { ResponseType } from 'axios'
 import axios from 'axios'
 import type { RequestProps } from './types'
 import type { ChatMessage } from './chatgpt'
@@ -83,31 +84,46 @@ router.post('/verify', async (req, res) => {
 })
 
 async function transforProxy(req, res, to_url) {
-  const method = req.method
   const headers = req.headers
-  const data = req.body
   // modify headers for private
   delete headers.host
   delete headers['x-forwarded-for']
+  delete headers['x-forwarded-proto']
+  delete headers['x-envoy-external-address']
   delete headers['x-real-ip']
   // for local proxy
   const proxy_agent = createProxyAgent()
-  globalThis.console.log(`${new Date().toISOString()} ${req.url} => ${to_url} request proxy whith ${JSON.stringify(headers)} ${JSON.stringify(data)}`)
+  const responseType_: ResponseType = req.body.stream ? 'stream' : 'text'
+  globalThis.console.log(`${new Date().toISOString()} ${req.method} ${responseType_} ${req.url} => ${to_url} request proxy whith ${JSON.stringify(headers)} ${JSON.stringify(req.body)}`)
+  // request proxy
   axios.request({
-    method,
+    method: req.method,
     url: to_url,
     headers,
-    data,
+    data: req.body,
+    responseType: responseType_,
     ...proxy_agent,
   }).then((response) => {
-    for (const [key, value] of Object.entries(response.headers))
-      res.setHeader(key, value)
-    res.status(response.status).send(response.data)
-  }).catch((error) => {
-    if (error.response)
-      res.status(error.response.status).send(error.response.data)
+    res.status(response.status).set(response.headers)
+    if (response.headers['content-length'])
+      res.send(response.data) // no stream
     else
-      res.status(500).send('Error')
+      response.data.pipe(res) // stream
+  }).catch((error) => {
+    if (res.headersSent) {
+      res.end('close stream')
+    }
+    else {
+      if (error.response) {
+        globalThis.console.log(`catch request error ${error}`)
+        res.status(error.response.status).set(error.response.headers).end(error.response.data)
+      }
+      else {
+        globalThis.console.error(`catch system error ${error}`)
+        res.writeHead(500, { 'Content-Type': 'text/plain' })
+        res.end('500 Internal Server Error')
+      }
+    }
   })
 }
 
