@@ -137,27 +137,27 @@ async function chatReplyProcess(options: RequestOptions) {
  * @returns 返回dict对象，httpAgent和httpsAgent，如果无代码配置，则是undefined
  */
 function createProxyAgent() {
-  if (process.env.SOCKS_PROXY_HOST && process.env.SOCKS_PROXY_PORT) {
+  if (isNotEmptyString(process.env.SOCKS_PROXY_HOST) && isNotEmptyString(process.env.SOCKS_PROXY_PORT)) {
     // console.log('代理配置: %s:%s', process.env.SOCKS_PROXY_HOST, process.env.SOCKS_PROXY_PORT)
     const agent = new SocksProxyAgent({
       hostname: process.env.SOCKS_PROXY_HOST,
       port: process.env.SOCKS_PROXY_PORT,
-      username: process.env.SOCKS_PROXY_USERNAME,
-      password: process.env.SOCKS_PROXY_PASSWORD,
+      userId: isNotEmptyString(process.env.SOCKS_PROXY_USERNAME) ? process.env.SOCKS_PROXY_USERNAME : undefined,
+      password: isNotEmptyString(process.env.SOCKS_PROXY_PASSWORD) ? process.env.SOCKS_PROXY_PASSWORD : undefined,
     })
     const https_agent = new SocksProxyAgent({
       protocol: 'socks5h',
       hostname: process.env.SOCKS_PROXY_HOST,
       port: process.env.SOCKS_PROXY_PORT,
-      username: process.env.SOCKS_PROXY_USERNAME,
-      password: process.env.SOCKS_PROXY_PASSWORD,
+      userId: isNotEmptyString(process.env.SOCKS_PROXY_USERNAME) ? process.env.SOCKS_PROXY_USERNAME : undefined,
+      password: isNotEmptyString(process.env.SOCKS_PROXY_PASSWORD) ? process.env.SOCKS_PROXY_PASSWORD : undefined,
     })
     return {
       httpAgent: agent,
       httpsAgent: https_agent,
     }
   }
-  if (process.env.HTTPS_PROXY || process.env.ALL_PROXY) {
+  if (isNotEmptyString(process.env.HTTPS_PROXY) || isNotEmptyString(process.env.ALL_PROXY)) {
     const httpsProxy = process.env.HTTPS_PROXY || process.env.ALL_PROXY
     const agent = new HttpsProxyAgent(httpsProxy)
     return {
