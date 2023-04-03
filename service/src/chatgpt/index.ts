@@ -189,7 +189,8 @@ async function fetchBalance() {
     const balance = response.data.total_available ?? 0
     return Promise.resolve(balance.toFixed(3))
   }
-  catch {
+  catch (error) {
+    globalThis.console.log(`fetch balance error: ${error}`)
     return Promise.resolve('-')
   }
 }
