@@ -37,7 +37,7 @@ function handleReset() {
       <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.role') }}</span>
         <div class="flex-1">
-          <NInput v-model:value="systemMessage" placeholder="" />
+          <NInput v-model:value="systemMessage" type="textarea" :autosize="{ minRows: 1, maxRows: 4 }" />
         </div>
       </div>
       <div class="flex items-center space-x-4">
