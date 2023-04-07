@@ -5,12 +5,16 @@ const LOCAL_NAME = 'settingsStorage'
 export interface SettingsState {
   systemMessage: string
   systemModel: string
+  temperature: number
+  top_p: number
 }
 
 export function defaultSetting(): SettingsState {
   return {
     systemMessage: 'You are ChatGPT, a large language model trained by OpenAI. Follow the user\'s instructions carefully. Respond using markdown.',
     systemModel: 'gpt-3.5-turbo-0301',
+    temperature: 0.8,
+    top_p: 1,
   }
 }
 

@@ -6,4 +6,10 @@ export interface RequestOptions {
   process?: (chat: ChatMessage) => void
   systemMessage?: string
   model?: string
+  temperature?: number
+  top_p?: number
+}
+
+export interface BalanceResponse {
+  total_usage: number
 }
